@@ -1,9 +1,11 @@
 extern crate amethyst;
 
 mod pong;
+mod systems;
 
 use amethyst::{
     core::transform::TransformBundle,
+    input::{InputBundle, StringBindings},
     prelude::*,
     renderer::{
         plugins::{RenderFlat2D, RenderToWindow},
@@ -23,7 +25,15 @@ fn main() -> Result<(), amethyst::Error> {
     let assets_dir = app_root.join("assets");
     let display_config_path = app_root.join("config").join("display.ron");
 
+    let binding_path = app_root.join("config").join("bindings.ron");
+
+    let input_bundle =
+        InputBundle::<StringBindings>::new().with_bindings_from_file(binding_path)?;
+
     let game_data = GameDataBuilder::default()
+        .with_bundle(TransformBundle::new())?
+        .with_bundle(input_bundle)?
+        .with(systems::PaddleSystem, "paddle_system", &["input_system"])
         .with_bundle(
             RenderingBundle::<DefaultBackend>::new()
                 .with_plugin(
@@ -31,8 +41,7 @@ fn main() -> Result<(), amethyst::Error> {
                         .with_clear([0.0, 0.0, 0.0, 1.0]),
                 )
                 .with_plugin(RenderFlat2D::default()),
-        )?
-        .with_bundle(TransformBundle::new())?;
+        )?;
 
     let mut game = Application::new(assets_dir, Pong, game_data)?;
 
